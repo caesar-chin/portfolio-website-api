@@ -13,7 +13,7 @@ exports.send_email = (req, res) => {
 
   let mailOptions = {
     from: req.body.email,
-    to: "caesarc.1628@gmail.com",
+    to: "caesarportfolio1234@gmail.com",
     subject: `Message from ${req.body.name} via caesarchin.com`,
     html: req.body.message,
   };
