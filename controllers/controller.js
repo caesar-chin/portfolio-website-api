@@ -20,13 +20,13 @@ exports.send_email = (req, res) => {
 
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
-      res.res.sendStatus(400).send({
+      res.status(400).send({
         success: false,
         message: "Error sending email",
       });
       console.log(error);
     } else {
-      res.res.sendStatus(200).send({
+      res.status(200).send({
         success: true,
         message: "Email sent successfully",
       });
