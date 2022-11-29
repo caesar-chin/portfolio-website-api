@@ -17,6 +17,10 @@ require("./routes/routes.js")(app);
 
 const PORT = process.env.PORT;
 
+app.get("/", (req, res) => {
+  res.json({ message: "Hello!" });
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
