@@ -1,6 +1,27 @@
 require("dotenv").config();
 
+// import individual service
+const {
+  S3Client,
+  ListBucketsCommand,
+  ListObjectsCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  ListObjectsV2Command,
+} = require("@aws-sdk/client-s3");
+const { Upload } = require("@aws-sdk/lib-storage");
+
+const client = new S3Client({
+  region: "us-east-1",
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS,
+    secretAccessKey: process.env.AWS_SECRET,
+  },
+});
+
+const Jimp = require("jimp");
 const nodemailer = require("nodemailer");
+const sharp = require("sharp");
 
 exports.send_email = (req, res) => {
   var transporter = nodemailer.createTransport({
@@ -34,3 +55,21 @@ exports.send_email = (req, res) => {
     }
   });
 };
+
+exports.test_s3 = async (req, res) => {
+  try {
+    const command = new ListObjectsCommand({
+      Bucket: "caesar-chin-photography",
+      Prefix: "concert/",
+    });
+    const data = await client.send(command);
+    return res.status(200).send(data);
+    // process data.
+  } catch (error) {
+    console.log(error);
+    return res.status(400).send({});
+
+    // error handling.
+  }
+};
+
