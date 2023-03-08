@@ -1,15 +1,7 @@
 require("dotenv").config();
 
 // import individual service
-const {
-  S3Client,
-  ListBucketsCommand,
-  ListObjectsCommand,
-  GetObjectCommand,
-  PutObjectCommand,
-  ListObjectsV2Command,
-} = require("@aws-sdk/client-s3");
-const { Upload } = require("@aws-sdk/lib-storage");
+const { S3Client, ListObjectsCommand } = require("@aws-sdk/client-s3");
 
 const client = new S3Client({
   region: "us-east-1",
@@ -19,9 +11,7 @@ const client = new S3Client({
   },
 });
 
-const Jimp = require("jimp");
 const nodemailer = require("nodemailer");
-const sharp = require("sharp");
 
 exports.send_email = (req, res) => {
   var transporter = nodemailer.createTransport({
@@ -72,4 +62,3 @@ exports.test_s3 = async (req, res) => {
     // error handling.
   }
 };
-
