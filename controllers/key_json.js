@@ -1,4 +1,7 @@
-const { ListObjectsV2Command } = require("@aws-sdk/client-s3");
+const {
+  ListObjectsV2Command,
+  GetObjectCommand,
+} = require("@aws-sdk/client-s3");
 const { Upload } = require("@aws-sdk/lib-storage");
 
 // Define a function to check if an image file already exists in S3 bucket with same key
@@ -40,14 +43,22 @@ async function uploadToS3(client, file, key) {
   });
 
   // Upload file to S3 bucket using promise methocd
-  await upload
-    .done()
-    .then((result) => {
-      return result.Location;
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+  try {
+    const result = await upload.done();
+    console.log(`File uploaded successfully. ETag: ${result.ETag}`);
+    return result.ETag;
+  } catch (error) {
+    console.log(`Error uploading file: ${error}`);
+  }
+}
+
+async function streamToString(stream) {
+  let chunks = [];
+  return new Promise((resolve, reject) => {
+    stream.on("data", (chunk) => chunks.push(chunk));
+    stream.on("error", reject);
+    stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+  });
 }
 
 // Keys for photos
@@ -67,31 +78,34 @@ exports.add_key_json = async (
   client,
   key,
   successfulOriginalUploads,
-  request_body
+  request_body,
+  res
 ) => {
   try {
-    result = await checkIfExists(client, key);
+    var if_success = false;
+    var result = await checkIfExists(client, key);
     if (result) {
       console.log("Key.json File already exists, downloading it...");
       await client
         .send(
-          new getObjectCommand({ Bucket: "caesar-chin-photography", Key: key })
+          new GetObjectCommand({ Bucket: "caesar-chin-photography", Key: key })
         )
         .then(async (data) => {
           var buffer = data.Body;
-          var json_array = JSON.parse(buffer.toString());
+          var json = JSON.parse(await streamToString(buffer));
+
           var new_obj = [];
 
           successfulOriginalUploads.forEach((photo) => {
             var photo_obj = {
               [photo.fileName]: {
-                occasion: str(request_body.occasion),
-                type: str(request_body.type),
-                date: str(request_body.date),
-                artist: str(request_body.artist),
-                venue: str(request_body.venue),
-                caption: str(request_body.caption),
-                url: str(photo.url),
+                occasion: request_body.occasion,
+                type: request_body.type,
+                date: request_body.date,
+                artist: request_body.artist,
+                venue: request_body.venue,
+                caption: request_body.caption,
+                url: photo.url,
               },
             };
             new_obj.push(photo_obj);
@@ -103,12 +117,11 @@ exports.add_key_json = async (
 
           await uploadToS3(client, newBuffer, key);
 
-          return { success: true };
+          return (if_success = true);
         })
         .catch((error) => {
           console.log(error);
-          res.status(400).send({ message: "Error downloading JSON file." });
-          return false;
+          return (if_success = false);
         });
     } else {
       console.log("JSON File does not exist, creating it...");
@@ -133,45 +146,57 @@ exports.add_key_json = async (
 
       await uploadToS3(client, newBuffer, key);
 
-      return { success: true };
+      console.log("JSON File created successfully.");
+
+      return (if_success = true);
     }
+    return if_success;
   } catch (error) {
     console.log(error);
-    res.status(400).send({ message: "Error uploading JSON file." });
     return false;
   }
 };
 
 // List of occasions
-exports.add_index_json = async (client, key, occasion, name) => {
+exports.add_index_json = async (client, key, occasion, name, res) => {
   try {
-    result = await checkIfExists(client, key);
+    var if_success = false;
+    var result = await checkIfExists(client, key);
     if (result) {
       console.log("Index.json File already exists, downloading it...");
       await client
         .send(
-          new getObjectCommand({
+          new GetObjectCommand({
             Bucket: "caesar-chin-photography",
             Key: key,
           })
         )
         .then(async (data) => {
           var buffer = data.Body;
-          var json = JSON.parse(buffer.toString());
-          var new_obj = { [occasion]: name };
+          var json = JSON.parse(await streamToString(buffer));
 
+          console.log("Parsing through JSON file and converting...");
+
+          var new_obj = { [occasion]: name };
           Object.assign(json, new_obj);
 
           var newBuffer = Buffer.from(JSON.stringify(json));
 
-          await uploadToS3(client, newBuffer, key);
+          console.log("Uploading to S3...");
 
-          return { success: true };
+          var etag = await uploadToS3(client, newBuffer, key);
+
+          if (etag) {
+            console.log("JSON File updated successfully.");
+            return (if_success = true);
+          } else {
+            console.log("JSON File failed to update.");
+            return (if_success = false);
+          }
         })
         .catch((error) => {
           console.log(error);
-          res.status(400).send({ message: "Error downloading JSON file." });
-          return false;
+          return (if_success = false);
         });
     } else {
       console.log("JSON File does not exist, creating it...");
@@ -180,9 +205,12 @@ exports.add_index_json = async (client, key, occasion, name) => {
 
       await uploadToS3(client, buffer, key);
 
-      return { success: true };
+      console.log("JSON File created successfully.");
+      return (if_success = true);
     }
+    return if_success;
   } catch (error) {
     console.log(error);
+    return false;
   }
 };

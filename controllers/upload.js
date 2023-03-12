@@ -4,7 +4,7 @@ require("dotenv").config();
 const {
   S3Client,
   ListObjectsV2Command,
-  getObjectCommand,
+  GetObjectCommand,
 } = require("@aws-sdk/client-s3");
 const { Upload } = require("@aws-sdk/lib-storage");
 
@@ -21,6 +21,14 @@ const client = new S3Client({
 });
 
 const sharp = require("sharp");
+
+async function streamToBuffer(stream) {
+  const chunks = [];
+  for await (const chunk of stream) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}
 
 // Define a function to convert an image file to webp format using sharp library
 async function convertToWebp(file) {
@@ -113,17 +121,18 @@ exports.upload_s3 = async (req, res) => {
     if (result) {
       console.log(`File ${zipfileKey} already exists in S3 bucket.`);
 
+      var headParams = {
+        Bucket: "caesar-chin-photography",
+        Key: zipfileKey,
+      };
+
+      const objectCommand = new GetObjectCommand(headParams);
+
       await client
-        .send(
-          new getObjectCommand({
-            Bucket: "caesar-chin-photography",
-            Key: zipfileKey,
-          })
-        )
+        .send(objectCommand)
         .then(async (data) => {
           var readStream = data.Body;
-          console.log(readStream);
-          return JSZip.loadAsync(readStream)
+          JSZip.loadAsync(await streamToBuffer(readStream))
             .then((zip) => {
               zipFile = zip;
             })
@@ -137,7 +146,7 @@ exports.upload_s3 = async (req, res) => {
         })
         .catch((error) => {
           console.log(error);
-          res
+          return res
             .status(400)
             .send({ message: "There has been an error getting the zip file" });
         });
@@ -195,8 +204,8 @@ exports.upload_s3 = async (req, res) => {
       try {
         result = await checkIfExists(webpKey);
         if (result) {
-          console.log(`File ${file.originalname} already exists in S3 bucket.`);
-          skippedFiles.push(webpKey);
+          console.log(`File ${webpfilename} already exists in S3 bucket.`);
+          skippedFiles.push(webpfilename);
           continue;
         } else {
           try {
@@ -263,27 +272,44 @@ exports.upload_s3 = async (req, res) => {
       });
   } catch (err) {
     console.log(err);
-    res
+    return res
       .status(400)
       .send({ message: "There has been an error uploading zip file" });
   }
 
-  if (
-    add_index_json(client, `${type}/index.json`, occasion, req.body.caption) &&
-    add_key_json(
-      client,
-      `${type}/${occasion}/keys.json`,
-      successfulOriginalUploads,
-      req.body
-    )
-  ) {
-    console.log("Index and key files updated successfully.");
+  var result = await add_index_json(
+    client,
+    `${type}/index.json`,
+    occasion,
+    req.body.caption,
+    res
+  );
+  if (result) {
+    console.log("Index file updated successfully.");
+    if (
+      await add_key_json(
+        client,
+        `${type}/${occasion}/keys.json`,
+        successfulOriginalUploads,
+        req.body,
+        res
+      )
+    ) {
+      console.log("Key file updated successfully.");
+    } else {
+      console.log("There has been an error updating key files.");
+      return res
+        .status(400)
+        .send({ message: "There has been an error updating key" });
+    }
   } else {
-    console.log("There has been an error updating index and key files.");
+    console.log("There has been an error updating index files.");
     return res
       .status(400)
       .send({ message: "There has been an error updating index" });
   }
+
+  console.log("Finished uploading files.");
 
   return res.status(200).json({
     success: 200,
