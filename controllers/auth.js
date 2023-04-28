@@ -32,7 +32,10 @@ exports.auth_github_callback = (passport) => {
             if (err) {
               return next(err);
             }
-            console.log("Access token from session object:", req.session.accessToken); // Log the accessToken from session object
+            console.log(
+              "Access token from session object:",
+              req.session.accessToken
+            ); // Log the accessToken from session object
             res.redirect("/");
           });
         });
