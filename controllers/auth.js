@@ -8,14 +8,14 @@ exports.auth_github_callback = (passport) => {
   return (req, res, next) => {
     passport.authenticate(
       "github",
-      { failureRedirect: "/dashboard" },
+      { failureRedirect: "https://caesarchin.com/dashboard" },
       (err, user) => {
         if (err) {
           return next(err);
         }
 
         if (!user) {
-          return res.redirect("/dashboard");
+          return res.redirect("https://caesarchin.com/dashboard");
         }
 
         req.logIn(user, (err) => {
@@ -36,7 +36,7 @@ exports.auth_github_callback = (passport) => {
               "Access token from session object:",
               req.session.accessToken
             ); // Log the accessToken from session object
-            res.redirect("/");
+            res.redirect("https://caesarchin.com/dashboard/edit");
           });
         });
       }
