@@ -1,12 +1,37 @@
 require("dotenv").config();
 
 const express = require("express");
+const passport = require("passport");
+const session = require("express-session");
+const initializePassport = require("./passport-config");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
+
+initializePassport(passport);
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false,
+      maxAge: 24 * 60 * 60 * 1000 * 7, // 1 week
+      httpOnly: false,
+    },
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
 
 //parse requests of application/json
 app.use(express.json());
@@ -15,7 +40,7 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-require("./routes/routes.js")(app);
+require("./routes/routes.js")(app, passport);
 
 const PORT = process.env.PORT;
 

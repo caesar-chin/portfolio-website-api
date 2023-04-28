@@ -1,10 +1,12 @@
 const multer = require("multer");
+const { ensureAuthenticated } = require("../middleware");
 
-module.exports = (app) => {
+module.exports = (app, passport) => {
   //controller functions are objects (lowercase name)
 
   const controller = require("../controllers/controller.js");
-  const upload_controller = require("../controllers/upload.js")
+  const upload_controller = require("../controllers/upload.js");
+  const auth_controller = require("../controllers/auth.js");
 
   const upload = multer({ storage: multer.memoryStorage() });
 
@@ -14,8 +16,27 @@ module.exports = (app) => {
 
   router.get("/test_aws_s3", controller.test_s3);
 
-  router.post("/upload", upload.any("files"), upload_controller.upload_s3);
+  router.post(
+    "/upload",
+    ensureAuthenticated,
+    upload.any("files"),
+    upload_controller.upload_s3
+  );
 
+  router.get("/auth/github", auth_controller.auth_github(passport));
+
+  router.get(
+    "/auth/github/callback",
+    auth_controller.auth_github_callback(passport)
+  );
+
+  router.get("/logout", auth_controller.github_logout);
+
+  router.get(
+    "/test_cookies",
+    ensureAuthenticated,
+    auth_controller.test_cookies
+  );
 
   app.use("/", router);
 };
