@@ -4,9 +4,10 @@ const { ensureAuthenticated } = require("../middleware");
 module.exports = (app, passport) => {
   //controller functions are objects (lowercase name)
 
-  const controller = require("../controllers/controller.js");
+  const controller = require("../controllers/send_email.js");
   const upload_controller = require("../controllers/upload.js");
   const auth_controller = require("../controllers/auth.js");
+  const dashboard_controller = require("../controllers/dashboard.js");
 
   const upload = multer({ storage: multer.memoryStorage() });
 
@@ -21,6 +22,11 @@ module.exports = (app, passport) => {
     ensureAuthenticated,
     upload.any("files"),
     upload_controller.upload_s3
+  );
+
+  router.get(
+    "/get_index_and_key_json",
+    dashboard_controller.getIndexAndKeyJson
   );
 
   router.get("/auth/github", auth_controller.auth_github(passport));

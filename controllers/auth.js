@@ -50,5 +50,5 @@ exports.github_logout = (req, res) => {
 };
 
 exports.test_cookies = (req, res) => {
-  res.json({ message: "You are authenticated!" });
+  res.json({ code: 200, message: "You are authenticated!" });
 };

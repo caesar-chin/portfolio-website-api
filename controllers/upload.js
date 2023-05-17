@@ -8,7 +8,7 @@ const {
 } = require("@aws-sdk/client-s3");
 const { Upload } = require("@aws-sdk/lib-storage");
 
-const { add_key_json, add_index_json } = require("./key_json.js");
+const { add_key_json, add_index_json } = require("../helper/upload_key_json.js");
 
 const JSZip = require("jszip");
 
@@ -281,8 +281,7 @@ exports.upload_s3 = async (req, res) => {
     client,
     `${type}/index.json`,
     occasion,
-    req.body.caption,
-    res
+    req.body.caption
   );
   if (result) {
     console.log("Index file updated successfully.");
@@ -291,8 +290,8 @@ exports.upload_s3 = async (req, res) => {
         client,
         `${type}/${occasion}/keys.json`,
         successfulOriginalUploads,
-        req.body,
-        res
+        successfulWebpUploads,
+        req.body
       )
     ) {
       console.log("Key file updated successfully.");

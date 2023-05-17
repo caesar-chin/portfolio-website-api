@@ -78,8 +78,8 @@ exports.add_key_json = async (
   client,
   key,
   successfulOriginalUploads,
-  request_body,
-  res
+  successfulWebpUploads,
+  request_body
 ) => {
   try {
     var if_success = false;
@@ -127,7 +127,7 @@ exports.add_key_json = async (
       console.log("JSON File does not exist, creating it...");
       var new_obj = [];
 
-      successfulOriginalUploads.forEach((photo) => {
+      successfulOriginalUploads.forEach((photo, index) => {
         var photo_obj = {
           [photo.fileName]: {
             occasion: request_body.occasion,
@@ -137,6 +137,7 @@ exports.add_key_json = async (
             caption: request_body.caption,
             type: request_body.type,
             url: photo.url,
+            webp_url: successfulWebpUploads[index].url,
           },
         };
         new_obj.push(photo_obj);
@@ -158,7 +159,7 @@ exports.add_key_json = async (
 };
 
 // List of occasions
-exports.add_index_json = async (client, key, occasion, name, res) => {
+exports.add_index_json = async (client, key, occasion, name) => {
   try {
     var if_success = false;
     var result = await checkIfExists(client, key);
