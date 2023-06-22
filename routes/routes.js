@@ -8,6 +8,7 @@ module.exports = (app, passport) => {
   const upload_controller = require("../controllers/upload.js");
   const auth_controller = require("../controllers/auth.js");
   const dashboard_controller = require("../controllers/dashboard.js");
+  const put_list = require("../controllers/put_list.js");
 
   const upload = multer({ storage: multer.memoryStorage() });
 
@@ -43,6 +44,8 @@ module.exports = (app, passport) => {
     ensureAuthenticated,
     auth_controller.test_cookies
   );
+
+  router.put("/add_occasion",  put_list.add_new_occasion);
 
   app.use("/", router);
 };

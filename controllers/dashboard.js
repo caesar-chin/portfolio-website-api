@@ -33,20 +33,15 @@ async function streamToString(stream) {
 }
 
 async function fetchJsonFile(key) {
-  try {
-    const data = await client.send(
-      new GetObjectCommand({
-        Bucket: "caesar-chin-photography",
-        Key: key,
-      })
-    );
-    var buffer = data.Body;
-    var json = JSON.parse(await streamToString(buffer));
-    return json;
-  } catch (error) {
-    console.log(error);
-    throw error; // throw the error so it can be caught in getIndexAndKeyJson
-  }
+  const data = await client.send(
+    new GetObjectCommand({
+      Bucket: "caesar-chin-photography",
+      Key: key,
+    })
+  );
+  var buffer = data.Body;
+  var json = JSON.parse(await streamToString(buffer));
+  return json;
 }
 
 exports.getIndexAndKeyJson = async (req, res) => {
@@ -69,10 +64,15 @@ exports.getIndexAndKeyJson = async (req, res) => {
       //Loop through each key in concert_keys
       // output_json_file : {keys: {occasion: [<list of photo keys>]}}
       for (let occasion of concert_keys) {
-        //For each key, fetch the json file from S3
-        output_json_file[phototype]["keys"][occasion] = await fetchJsonFile(
-          `${phototype}/${occasion}/keys.json`
-        );
+        try {
+          //For each key, fetch the json file from S3
+          output_json_file[phototype]["keys"][occasion] = await fetchJsonFile(
+            `${phototype}/${occasion}/keys.json`
+          );
+        } catch (err) {
+          // If there's an error (the file is not found), assign an empty array
+          output_json_file[phototype]["keys"][occasion] = [];
+        }
       }
     }
     // console.log(concert_keys);
