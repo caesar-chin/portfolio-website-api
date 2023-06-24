@@ -176,7 +176,11 @@ exports.add_new_occasion = async (req, res) => {
 
   res
     .status(200)
-    .send({ message: "New occasion added", occasion_key: occasion_key });
+    .send({
+      message: "New occasion added",
+      occasion_key: occasion_key,
+      occasion_name: req.body.occasion,
+    });
 };
 
 exports.add_new_photo = async (req, res) => {};
