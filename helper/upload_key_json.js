@@ -79,79 +79,73 @@ exports.add_key_json = async (
   key,
   successfulOriginalUploads,
   successfulWebpUploads,
-  request_body
+  metadata,
+  occasion,
+  type
 ) => {
   try {
-    var if_success = false;
-    var result = await checkIfExists(client, key);
+    let result = await checkIfExists(client, key);
+    let new_obj = [];
     if (result) {
       console.log("Key.json File already exists, downloading it...");
-      await client
-        .send(
-          new GetObjectCommand({ Bucket: "caesar-chin-photography", Key: key })
-        )
-        .then(async (data) => {
-          var buffer = data.Body;
-          var json = JSON.parse(await streamToString(buffer));
+      const data = await client.send(
+        new GetObjectCommand({ Bucket: "caesar-chin-photography", Key: key })
+      );
+      let buffer = data.Body;
+      let json = JSON.parse(await streamToString(buffer));
 
-          var new_obj = [];
-
-          successfulOriginalUploads.forEach((photo) => {
-            var photo_obj = {
-              [photo.fileName]: {
-                occasion: request_body.occasion,
-                type: request_body.type,
-                date: request_body.date,
-                artist: request_body.artist,
-                venue: request_body.venue,
-                caption: request_body.caption,
-                url: photo.url,
-              },
-            };
-            new_obj.push(photo_obj);
-          });
-
-          json_array = json.concat(new_obj);
-
-          var newBuffer = Buffer.from(JSON.stringify(json_array));
-
-          await uploadToS3(client, newBuffer, key);
-
-          return (if_success = true);
-        })
-        .catch((error) => {
-          console.log(error);
-          return (if_success = false);
-        });
-    } else {
-      console.log("JSON File does not exist, creating it...");
-      var new_obj = [];
-
-      successfulOriginalUploads.forEach((photo, index) => {
-        var photo_obj = {
-          [photo.fileName]: {
-            occasion: request_body.occasion,
-            date: request_body.date,
-            artist: request_body.artist,
-            venue: request_body.venue,
-            caption: request_body.caption,
-            type: request_body.type,
-            url: photo.url,
-            webp_url: successfulWebpUploads[index].url,
-          },
-        };
-        new_obj.push(photo_obj);
+      new_obj = metadata.map((photoData) => {
+        const fileName = Object.keys(photoData)[0]; // get the file name
+        const photo = successfulOriginalUploads.find(
+          (photo) => photo.fileName === fileName
+        );
+        if (photo) {
+          return {
+            [fileName]: {
+              ...photoData[fileName],
+              occasion: occasion,
+              type: type,
+              url: photo.url,
+            },
+          };
+        }
+        return photoData;
       });
 
-      var newBuffer = Buffer.from(JSON.stringify(new_obj));
+      json = [...json, ...new_obj];
+
+      const newBuffer = Buffer.from(JSON.stringify(json));
+
+      await uploadToS3(client, newBuffer, key);
+    } else {
+      console.log("JSON File does not exist, creating it...");
+
+      new_obj = metadata.map((photoData, index) => {
+        const fileName = Object.keys(photoData)[0]; // get the file name
+        const photo = successfulOriginalUploads.find(
+          (photo) => photo.fileName === fileName
+        );
+        if (photo) {
+          return {
+            [fileName]: {
+              ...photoData[fileName],
+              occasion: occasion,
+              type: type,
+              url: photo.url,
+              webp_url: successfulWebpUploads[index]?.url,
+            },
+          };
+        }
+        return photoData;
+      });
+
+      const newBuffer = Buffer.from(JSON.stringify(new_obj));
 
       await uploadToS3(client, newBuffer, key);
 
       console.log("JSON File created successfully.");
-
-      return (if_success = true);
     }
-    return if_success;
+    return true;
   } catch (error) {
     console.log(error);
     return false;

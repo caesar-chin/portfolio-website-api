@@ -103,8 +103,12 @@ async function checkIfExists(key) {
 }
 
 exports.upload_s3 = async (req, res) => {
-  const type = req.body.type;
-  const occasion = req.body.occasion;
+  occasionObject = JSON.parse(req.body.occasionObject);
+  metadata = JSON.parse(req.body.metadata);
+
+  const type = occasionObject.selectedOccasionType;
+  const occasion = occasionObject.selectedOccasionKey;
+
   const files = req.files;
 
   // Initialize an array of skipped files
@@ -120,39 +124,37 @@ exports.upload_s3 = async (req, res) => {
 
   console.log("Finding zip file");
   try {
-    result = await checkIfExists(zipfileKey);
+    const result = await checkIfExists(zipfileKey);
+
     if (result) {
       console.log(`File ${zipfileKey} already exists in S3 bucket.`);
 
-      var headParams = {
+      const headParams = {
         Bucket: "caesar-chin-photography",
         Key: zipfileKey,
       };
 
       const objectCommand = new GetObjectCommand(headParams);
 
-      await client
-        .send(objectCommand)
-        .then(async (data) => {
-          var readStream = data.Body;
-          JSZip.loadAsync(await streamToBuffer(readStream))
-            .then((zip) => {
-              zipFile = zip;
-            })
-            .catch((err) => {
-              console.log(err);
+      try {
+        const data = await client.send(objectCommand);
+        const readStream = data.Body;
 
-              return res.status(400).send({
-                message: "There has been an error reading the zip file",
-              });
-            });
-        })
-        .catch((error) => {
+        try {
+          const buffer = await streamToBuffer(readStream);
+          zipFile = await JSZip.loadAsync(buffer);
+        } catch (error) {
           console.log(error);
-          return res
-            .status(400)
-            .send({ message: "There has been an error getting the zip file" });
-        });
+          return res.status(400).send({
+            message: "There has been an error reading the zip file",
+          });
+        }
+      } catch (error) {
+        console.log(error);
+        return res
+          .status(400)
+          .send({ message: "There has been an error getting the zip file" });
+      }
     } else {
       console.log(
         `File ${zipfileKey} does not exist in S3 bucket. \nCreating new zip file.`
@@ -169,76 +171,83 @@ exports.upload_s3 = async (req, res) => {
     // Get the original key from the file name
     const originalKey = `${type}/${occasion}/original/${file.originalname}`;
 
-    // Check if original file already exists in S3 bucket with same key
     try {
-      result = await checkIfExists(originalKey);
-      if (result) {
+      const exists = await checkIfExists(originalKey);
+
+      if (exists) {
         console.log(`File ${file.originalname} already exists in S3 bucket.`);
         skippedFiles.push(file.originalname);
-      } else {
-        // Upload original file to S3 bucket under original object
-        try {
-          await uploadToS3(file, originalKey);
-          var originalUrl = `https://caesar-chin-photography.s3.us-east-1.amazonaws.com/${originalKey}`;
-          console.log(`File ${file.originalname} uploaded successfully.`);
-          successfulOriginalUploads.push({
-            fileName: file.originalname,
-            url: originalUrl,
-          });
-        } catch (err) {
-          console.error(`Error uploading ${file.originalname}: ${err.message}`);
-          continue;
-        }
+        continue;
       }
+
+      try {
+        await uploadToS3(file, originalKey);
+      } catch (err) {
+        console.error(`Error uploading ${file.originalname}: ${err.message}`);
+        continue;
+      }
+
+      const originalUrl = `https://caesar-chin-photography.s3.us-east-1.amazonaws.com/${originalKey}`;
+      console.log(`File ${file.originalname} uploaded successfully.`);
+      successfulOriginalUploads.push({
+        fileName: file.originalname,
+        url: originalUrl,
+      });
     } catch (err) {
-      console.log(`File ${file.originalname} does not exist in S3 bucket.`);
+      console.log(`Failed to handle original file ${file.originalname}.`);
+      continue;
     }
 
     // Convert original file to webp format
-    try {
-      // Get the webp key from the original key by replacing extension
-      var webpfilename = file.originalname.replace(
-        /\.(png|jpg|jpeg)$/i,
-        ".webp"
-      );
-      webpKey = `${type}/${occasion}/webp/${webpfilename}`;
+    const webpFilename = file.originalname.replace(
+      /\.(png|jpg|jpeg)$/i,
+      ".webp"
+    );
+    const webpKey = `${type}/${occasion}/webp/${webpFilename}`;
 
-      // Check if webp file already exists in S3 bucket with same key
-      try {
-        result = await checkIfExists(webpKey);
-        if (result) {
-          console.log(`File ${webpfilename} already exists in S3 bucket.`);
-          skippedFiles.push(webpfilename);
-          continue;
-        } else {
-          try {
-            const webpFile = await convertToWebp(file);
-            console.log(`File ${file.originalname} converted successfully.`);
-            // Upload webp file to S3 bucket under webp object
-            await uploadToS3(webpFile, webpKey);
-            var webpUrl = `https://caesar-chin-photography.s3.us-east-1.amazonaws.com/${webpKey}`;
-            console.log(
-              `WebP version of ${file.originalname} uploaded successfully.`
-            );
-            successfulWebpUploads.push({
-              fileName: webpfilename,
-              url: webpUrl,
-            });
-            zipFile.file(file.originalname, file.buffer);
-            console.log(`File ${file.originalname} added to zip file.`);
-          } catch (err) {
-            console.error(
-              `Error converting ${file.originalname}: ${err.message}`
-            );
-            continue;
-          }
-        }
-      } catch (err) {
-        console.log(`File ${file.originalname} does not exist in S3 bucket.`);
+    try {
+      const exists = await checkIfExists(webpKey);
+
+      if (exists) {
+        console.log(`File ${webpFilename} already exists in S3 bucket.`);
+        skippedFiles.push(webpFilename);
+        continue;
       }
+
+      let webpFile;
+
+      try {
+        webpFile = await convertToWebp(file);
+      } catch (err) {
+        console.error(`Error converting ${file.originalname}: ${err.message}`);
+        continue;
+      }
+
+      console.log(`File ${file.originalname} converted successfully.`);
+
+      try {
+        await uploadToS3(webpFile, webpKey);
+      } catch (err) {
+        console.error(
+          `Error uploading converted ${file.originalname}: ${err.message}`
+        );
+        continue;
+      }
+
+      const webpUrl = `https://caesar-chin-photography.s3.us-east-1.amazonaws.com/${webpKey}`;
+      console.log(
+        `WebP version of ${file.originalname} uploaded successfully.`
+      );
+      successfulWebpUploads.push({
+        fileName: webpFilename,
+        url: webpUrl,
+      });
+
+      zipFile.file(file.originalname, file.buffer);
+      console.log(`File ${file.originalname} added to zip file.`);
     } catch (err) {
       console.error(
-        `Error converting or uploading WebP version of ${file.originalname}: ${err.message}`
+        `Failed to handle webp conversion or upload for ${file.originalname}.`
       );
       continue;
     }
@@ -248,8 +257,6 @@ exports.upload_s3 = async (req, res) => {
   try {
     const zipFileBuffer = await zipFile.generateAsync({ type: "nodebuffer" });
     const zipFileBufferType = "application/zip";
-
-    // Create upload parameters
     const uploadParams = {
       Bucket: "caesar-chin-photography",
       Key: zipfileKey,
@@ -257,22 +264,13 @@ exports.upload_s3 = async (req, res) => {
       ContentType: zipFileBufferType,
       ACL: "public-read",
     };
-
     const upload = new Upload({
       client: client,
       params: uploadParams,
     });
-
-    // Upload file to S3 bucket using promise methocd
-    await upload
-      .done()
-      .then((result) => {
-        console.log(`Zip file ${zipFileName} uploaded successfully.`);
-        zipFileLocation = result.Location;
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+    const result = await upload.done();
+    console.log(`Zip file ${zipFileName} uploaded successfully.`);
+    zipFileLocation = result.Location;
   } catch (err) {
     console.log(err);
     return res
@@ -280,35 +278,30 @@ exports.upload_s3 = async (req, res) => {
       .send({ message: "There has been an error uploading zip file" });
   }
 
-  var result = await add_index_json(
-    client,
-    `${type}/index.json`,
-    occasion,
-    req.body.caption
-  );
-  if (result) {
-    console.log("Index file updated successfully.");
-    if (
-      await add_key_json(
-        client,
-        `${type}/${occasion}/keys.json`,
-        successfulOriginalUploads,
-        successfulWebpUploads,
-        req.body
-      )
-    ) {
-      console.log("Key file updated successfully.");
-    } else {
-      console.log("There has been an error updating key files.");
-      return res
-        .status(400)
-        .send({ message: "There has been an error updating key" });
-    }
+  // var result = await add_index_json(
+  //   client,
+  //   `${type}/index.json`,
+  //   occasion,
+  //   req.body.caption
+  // );
+
+  if (
+    await add_key_json(
+      client,
+      `${type}/${occasion}/keys.json`,
+      successfulOriginalUploads,
+      successfulWebpUploads,
+      metadata,
+      occasion,
+      type
+    )
+  ) {
+    console.log("Key file updated successfully.");
   } else {
-    console.log("There has been an error updating index files.");
+    console.log("There has been an error updating key files.");
     return res
       .status(400)
-      .send({ message: "There has been an error updating index" });
+      .send({ message: "There has been an error updating key" });
   }
 
   console.log("Finished uploading files.");

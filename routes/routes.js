@@ -20,7 +20,7 @@ module.exports = (app, passport) => {
 
   router.post(
     "/upload",
-    ensureAuthenticated,
+    // ensureAuthenticated,
     upload.any("files"),
     upload_controller.upload_s3
   );
@@ -45,7 +45,7 @@ module.exports = (app, passport) => {
     auth_controller.test_cookies
   );
 
-  router.put("/add_occasion",  put_list.add_new_occasion);
+  router.put("/add_occasion", put_list.add_new_occasion);
 
   app.use("/", router);
 };
