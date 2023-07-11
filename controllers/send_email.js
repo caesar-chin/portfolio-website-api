@@ -49,7 +49,7 @@ exports.send_email = (req, res) => {
 exports.test_s3 = async (req, res) => {
   try {
     const command = new ListObjectsCommand({
-      Bucket: "caesar-chin-photography",
+      Bucket: process.env.AWS_BUCKET,
       Prefix: "concert/",
     });
     const data = await client.send(command);

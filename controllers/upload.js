@@ -56,7 +56,7 @@ async function convertToWebp(file) {
 async function uploadToS3(file, key) {
   // Create upload parameters
   const uploadParams = {
-    Bucket: "caesar-chin-photography",
+    Bucket: process.env.AWS_BUCKET,
     Key: key,
     Body: file.buffer,
     ContentType: file.mimetype,
@@ -83,7 +83,7 @@ async function uploadToS3(file, key) {
 async function checkIfExists(key) {
   // Create head parameters
   const headParams = {
-    Bucket: "caesar-chin-photography",
+    Bucket: process.env.AWS_BUCKET,
     Key: key,
   };
 
@@ -130,7 +130,7 @@ exports.upload_s3 = async (req, res) => {
       console.log(`File ${zipfileKey} already exists in S3 bucket.`);
 
       const headParams = {
-        Bucket: "caesar-chin-photography",
+        Bucket: process.env.AWS_BUCKET,
         Key: zipfileKey,
       };
 
@@ -258,7 +258,7 @@ exports.upload_s3 = async (req, res) => {
     const zipFileBuffer = await zipFile.generateAsync({ type: "nodebuffer" });
     const zipFileBufferType = "application/zip";
     const uploadParams = {
-      Bucket: "caesar-chin-photography",
+      Bucket: process.env.AWS_BUCKET,
       Key: zipfileKey,
       Body: zipFileBuffer,
       ContentType: zipFileBufferType,

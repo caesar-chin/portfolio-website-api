@@ -38,7 +38,7 @@ async function streamToBuffer(stream) {
 async function uploadToS3(file, key) {
   // Create upload parameters
   const uploadParams = {
-    Bucket: "caesar-chin-photography",
+    Bucket: process.env.AWS_BUCKET,
     Key: key,
     Body: file.buffer,
     ContentType: file.mimetype,
@@ -65,7 +65,7 @@ async function uploadToS3(file, key) {
 async function checkIfExists(key) {
   // Create head parameters
   const headParams = {
-    Bucket: "caesar-chin-photography",
+    Bucket: process.env.AWS_BUCKET,
     Key: key,
   };
 
@@ -104,7 +104,7 @@ exports.add_new_occasion = async (req, res) => {
 
   // Download index.json file from S3 bucket
   const downloadParams = {
-    Bucket: "caesar-chin-photography",
+    Bucket: process.env.AWS_BUCKET,
     Key: jsonfilekey,
   };
 
@@ -117,6 +117,8 @@ exports.add_new_occasion = async (req, res) => {
     console.log(err);
   }
 
+  console.log(jsonfile.toString());
+
   // Add occasion to json file
   jsonfile = JSON.parse(jsonfile.toString());
 
@@ -128,7 +130,7 @@ exports.add_new_occasion = async (req, res) => {
   // Upload updated json file to S3 bucket and adds empty folder in s3 using occasion_key
   // Upload updated json file to S3 bucket and adds empty folder in s3 using occasion_key
   const uploadParams = {
-    Bucket: "caesar-chin-photography",
+    Bucket: process.env.AWS_BUCKET,
     Key: jsonfilekey,
     Body: JSON.stringify(jsonfile),
     ContentType: "application/json",
@@ -151,7 +153,7 @@ exports.add_new_occasion = async (req, res) => {
 
   // Upload empty folder to S3 bucket
   const uploadParams2 = {
-    Bucket: "caesar-chin-photography",
+    Bucket: process.env.AWS_BUCKET,
     Key: key,
     Body: "",
     ContentType: "application/json",
@@ -174,13 +176,11 @@ exports.add_new_occasion = async (req, res) => {
 
   console.log("New occasion added");
 
-  res
-    .status(200)
-    .send({
-      message: "New occasion added",
-      occasion_key: occasion_key,
-      occasion_name: req.body.occasion,
-    });
+  res.status(200).send({
+    message: "New occasion added",
+    occasion_key: occasion_key,
+    occasion_name: req.body.occasion,
+  });
 };
 
 exports.add_new_photo = async (req, res) => {};

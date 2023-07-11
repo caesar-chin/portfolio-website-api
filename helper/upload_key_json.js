@@ -8,7 +8,7 @@ const { Upload } = require("@aws-sdk/lib-storage");
 async function checkIfExists(client, key) {
   // Create head parameters
   const headParams = {
-    Bucket: "caesar-chin-photography",
+    Bucket: process.env.AWS_BUCKET,
     Key: key,
   };
 
@@ -30,7 +30,7 @@ async function checkIfExists(client, key) {
 async function uploadToS3(client, file, key) {
   // Create upload parameters
   const uploadParams = {
-    Bucket: "caesar-chin-photography",
+    Bucket: process.env.AWS_BUCKET,
     Key: key,
     Body: file,
     ContentType: "application/json",
@@ -89,7 +89,7 @@ exports.add_key_json = async (
     if (result) {
       console.log("Key.json File already exists, downloading it...");
       const data = await client.send(
-        new GetObjectCommand({ Bucket: "caesar-chin-photography", Key: key })
+        new GetObjectCommand({ Bucket: process.env.AWS_BUCKET, Key: key })
       );
       let buffer = data.Body;
       let json = JSON.parse(await streamToString(buffer));
@@ -162,7 +162,7 @@ exports.add_index_json = async (client, key, occasion, name) => {
       await client
         .send(
           new GetObjectCommand({
-            Bucket: "caesar-chin-photography",
+            Bucket: process.env.AWS_BUCKET,
             Key: key,
           })
         )

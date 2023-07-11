@@ -35,7 +35,7 @@ async function streamToString(stream) {
 async function fetchJsonFile(key) {
   const data = await client.send(
     new GetObjectCommand({
-      Bucket: "caesar-chin-photography",
+      Bucket: process.env.AWS_BUCKET,
       Key: key,
     })
   );

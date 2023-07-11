@@ -9,6 +9,8 @@ module.exports = (app, passport) => {
   const auth_controller = require("../controllers/auth.js");
   const dashboard_controller = require("../controllers/dashboard.js");
   const put_list = require("../controllers/put_list.js");
+  const delete_pictures = require("../controllers/delete_pictures.js");
+  const delete_occasions = require("../controllers/delete_occasions.js");
 
   const upload = multer({ storage: multer.memoryStorage() });
 
@@ -46,6 +48,18 @@ module.exports = (app, passport) => {
   );
 
   router.put("/add_occasion", ensureAuthenticated, put_list.add_new_occasion);
+
+  router.delete(
+    "/delete_files",
+    // ensureAuthenticated,
+    delete_pictures.delete_files
+  );
+
+  router.delete(
+    "/delete_occasions",
+    // ensureAuthenticated,
+    delete_occasions.delete_occasions
+  );
 
   app.use("/", router);
 };
