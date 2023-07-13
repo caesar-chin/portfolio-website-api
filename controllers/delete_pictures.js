@@ -7,12 +7,22 @@ const {
   PutObjectCommand,
 } = require("@aws-sdk/client-s3");
 
+const JSZip = require("jszip");
+
 const streamToString = (stream) =>
   new Promise((resolve, reject) => {
     const chunks = [];
     stream.on("data", (chunk) => chunks.push(chunk));
     stream.on("error", reject);
     stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+  });
+
+const streamToBuffer = (stream) =>
+  new Promise((resolve, reject) => {
+    const chunks = [];
+    stream.on("data", (chunk) => chunks.push(chunk));
+    stream.on("error", reject);
+    stream.on("end", () => resolve(Buffer.concat(chunks)));
   });
 
 const client = new S3Client({
@@ -87,14 +97,46 @@ exports.delete_files = async (req, res) => {
           new PutObjectCommand(putParams)
         );
         console.log(putObjectResponse);
+
+        // Download the zip file
+        const getZipParams = {
+          Bucket: bucket_name,
+          Key: occasion_name + "/" + occasion_name.split("/")[1] + ".zip",
+        };
+        const getZipResponse = await client.send(
+          new GetObjectCommand(getZipParams)
+        );
+        const zipContents = await streamToBuffer(getZipResponse.Body);
+        const zip = new JSZip();
+        const zipData = await zip.loadAsync(new Uint8Array(zipContents));
+
+        // Remove the unwanted files from the zip
+        for (const keyToDelete of keys_to_delete) {
+          zipData.remove(keyToDelete);
+        }
+
+        // Generate the new zip file content
+        const newZipContent = await zipData.generateAsync({
+          type: "nodebuffer",
+        });
+
+        // Upload the new zip file
+        const putZipParams = {
+          Bucket: bucket_name,
+          Key: occasion_name + "/" + occasion_name.split("/")[1] + ".zip",
+          Body: newZipContent,
+        };
+        await client.send(new PutObjectCommand(putZipParams));
       }
     }
 
-    res.status(200).send({ message: "Deletion operation completed" });
+    res
+      .status(200)
+      .send({ success: true, message: "Deletion operation completed" });
   } catch (err) {
     console.log(err);
     return res
       .status(400)
-      .send({ message: "Error deleting files", error: err });
+      .send({ message: "Error deleting files", error: err, success: false });
   }
 };

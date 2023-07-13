@@ -76,9 +76,9 @@ exports.getIndexAndKeyJson = async (req, res) => {
       }
     }
     // console.log(concert_keys);
-    res.status(200).send({ message: "success", data: output_json_file });
+    res.status(200).send({ message: "success", data: output_json_file, success: true });
   } catch (error) {
     console.log(error);
-    res.status(400).send({ message: "There has been an error" });
+    res.status(400).send({ message: "There has been an error", success: false });
   }
 };

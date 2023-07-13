@@ -57,7 +57,7 @@ exports.test_s3 = async (req, res) => {
     // process data.
   } catch (error) {
     console.log(error);
-    return res.status(400).send({});
+    return res.status(400).send({ success: false });
 
     // error handling.
   }

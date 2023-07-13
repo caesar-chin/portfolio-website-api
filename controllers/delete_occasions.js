@@ -26,8 +26,8 @@ exports.delete_occasions = async (req, res) => {
   const bucket_name = process.env.AWS_BUCKET;
   const folder_to_delete = req.body.occasion || "";
 
-  // Extracting the root directory (like "concert/" or "landscape/") 
-  const typeDirectory = folder_to_delete.split('/')[0] + '/';
+  // Extracting the root directory (like "concert/" or "landscape/")
+  const typeDirectory = folder_to_delete.split("/")[0] + "/";
 
   // We need to first get all objects within the folder
   const listParams = {
@@ -83,14 +83,16 @@ exports.delete_occasions = async (req, res) => {
     );
     console.log(putObjectResponse);
 
-    res
-      .status(200)
-      .send({ message: "Folder and index modification completed" });
+    res.status(200).send({
+      message: "Folder and index modification completed",
+      success: true,
+    });
   } catch (err) {
     console.log(err);
     return res.status(400).send({
       message: "Error deleting folder or modifying index",
       error: err,
+      success: false,
     });
   }
 };

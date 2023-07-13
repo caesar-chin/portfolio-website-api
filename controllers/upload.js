@@ -146,14 +146,16 @@ exports.upload_s3 = async (req, res) => {
         } catch (error) {
           console.log(error);
           return res.status(400).send({
+            success: false,
             message: "There has been an error reading the zip file",
           });
         }
       } catch (error) {
         console.log(error);
-        return res
-          .status(400)
-          .send({ message: "There has been an error getting the zip file" });
+        return res.status(400).send({
+          success: false,
+          message: "There has been an error getting the zip file",
+        });
       }
     } else {
       console.log(
@@ -273,9 +275,10 @@ exports.upload_s3 = async (req, res) => {
     zipFileLocation = result.Location;
   } catch (err) {
     console.log(err);
-    return res
-      .status(400)
-      .send({ message: "There has been an error uploading zip file" });
+    return res.status(400).send({
+      success: false,
+      message: "There has been an error uploading zip file",
+    });
   }
 
   // var result = await add_index_json(
@@ -299,15 +302,16 @@ exports.upload_s3 = async (req, res) => {
     console.log("Key file updated successfully.");
   } else {
     console.log("There has been an error updating key files.");
-    return res
-      .status(400)
-      .send({ message: "There has been an error updating key" });
+    return res.status(400).send({
+      success: false,
+      message: "There has been an error updating key",
+    });
   }
 
   console.log("Finished uploading files.");
 
   return res.status(200).json({
-    success: 200,
+    success: true,
     skippedFiles: skippedFiles,
     successfulOriginalUploads: successfulOriginalUploads,
     successfulWebpUploads: successfulWebpUploads,

@@ -12,6 +12,7 @@ module.exports = (app, passport) => {
   const delete_pictures = require("../controllers/delete_pictures.js");
   const delete_occasions = require("../controllers/delete_occasions.js");
   const edit_details = require("../controllers/edit_details.js");
+  const edit_ocacsion_name = require("../controllers/edit_occasion_name.js");
 
   const upload = multer({ storage: multer.memoryStorage() });
 
@@ -66,6 +67,12 @@ module.exports = (app, passport) => {
     "/edit_details",
     // ensureAuthenticated,
     edit_details.edit_details
+  );
+
+  router.put(
+    "/edit_ocacsion_name",
+    // ensureAuthenticated,
+    edit_ocacsion_name.edit_occasion_name
   );
 
   app.use("/", router);

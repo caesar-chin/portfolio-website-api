@@ -93,7 +93,9 @@ exports.add_new_occasion = async (req, res) => {
   const key = `${type}/${occasion_key}/`;
   const exists = await checkIfExists(key);
   if (exists) {
-    res.status(400).send({ message: "Occasion already exists" });
+    res
+      .status(400)
+      .send({ success: false, message: "Occasion already exists" });
     return;
   }
 
@@ -177,6 +179,7 @@ exports.add_new_occasion = async (req, res) => {
   console.log("New occasion added");
 
   res.status(200).send({
+    success: true,
     message: "New occasion added",
     occasion_key: occasion_key,
     occasion_name: req.body.occasion,

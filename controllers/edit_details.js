@@ -29,7 +29,9 @@ exports.edit_details = async (req, res) => {
 
   // Validate paths
   if (!paths || typeof paths !== "object") {
-    return res.status(400).send({ message: "Paths object is missing" });
+    return res
+      .status(400)
+      .send({ success: false, message: "Paths object is missing" });
   }
 
   try {
@@ -79,10 +81,14 @@ exports.edit_details = async (req, res) => {
       console.log(putObjectResponse);
     }
 
-    res.status(200).send({ message: "keys.json files modification completed" });
+    res.status(200).send({
+      success: true,
+      message: "keys.json files modification completed",
+    });
   } catch (err) {
     console.log(err);
     return res.status(400).send({
+      success: false,
       message: "Error modifying keys.json files",
       error: err,
     });
