@@ -91,6 +91,7 @@ exports.delete_files = async (req, res) => {
           Bucket: bucket_name,
           Key: occasion_name + "/keys.json",
           Body: JSON.stringify(keys),
+          ACL: 'public-read' // to make file public
         };
 
         const putObjectResponse = await client.send(
@@ -125,6 +126,7 @@ exports.delete_files = async (req, res) => {
           Bucket: bucket_name,
           Key: occasion_name + "/" + occasion_name.split("/")[1] + ".zip",
           Body: newZipContent,
+          ACL: "public-read", // to make file public
         };
         await client.send(new PutObjectCommand(putZipParams));
       }

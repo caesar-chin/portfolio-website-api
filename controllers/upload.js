@@ -189,7 +189,7 @@ exports.upload_s3 = async (req, res) => {
         continue;
       }
 
-      const originalUrl = `https://caesar-chin-photography.s3.us-east-1.amazonaws.com/${originalKey}`;
+      const originalUrl = `https://${process.env.AWS_BUCKET}.s3.us-east-1.amazonaws.com/${originalKey}`;
       console.log(`File ${file.originalname} uploaded successfully.`);
       successfulOriginalUploads.push({
         fileName: file.originalname,
@@ -236,7 +236,7 @@ exports.upload_s3 = async (req, res) => {
         continue;
       }
 
-      const webpUrl = `https://caesar-chin-photography.s3.us-east-1.amazonaws.com/${webpKey}`;
+      const webpUrl = `https://${process.env.AWS_BUCKET}.s3.us-east-1.amazonaws.com/${webpKey}`;
       console.log(
         `WebP version of ${file.originalname} uploaded successfully.`
       );

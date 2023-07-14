@@ -54,6 +54,7 @@ exports.edit_occasion_name = async (req, res) => {
       Bucket: bucket_name,
       Key: `${folderType}/index.json`,
       Body: JSON.stringify(index),
+      ACL: "public-read", // to make file public
     };
 
     await client.send(new PutObjectCommand(putParams));

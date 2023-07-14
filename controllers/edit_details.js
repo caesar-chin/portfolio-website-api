@@ -73,6 +73,7 @@ exports.edit_details = async (req, res) => {
         Bucket: bucket_name,
         Key: dirPath + "keys.json",
         Body: JSON.stringify(keys),
+        ACL: 'public-read' // to make file public
       };
 
       const putObjectResponse = await client.send(

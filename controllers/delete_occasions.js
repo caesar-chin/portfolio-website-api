@@ -24,64 +24,67 @@ const client = new S3Client({
 
 exports.delete_occasions = async (req, res) => {
   const bucket_name = process.env.AWS_BUCKET;
-  const folder_to_delete = req.body.occasion || "";
-
-  // Extracting the root directory (like "concert/" or "landscape/")
-  const typeDirectory = folder_to_delete.split("/")[0] + "/";
-
-  // We need to first get all objects within the folder
-  const listParams = {
-    Bucket: bucket_name,
-    Prefix: folder_to_delete,
-  };
+  const folders_to_delete = req.body.occasion || [];
 
   try {
-    const listResponse = await client.send(
-      new ListObjectsV2Command(listParams)
-    );
+    for (const folder_to_delete of folders_to_delete) {
+      // Extracting the root directory (like "concert/" or "landscape/")
+      const typeDirectory = folder_to_delete.split("/")[0] + "/";
 
-    // Prepare objects for deletion
-    const deleteParams = {
-      Bucket: bucket_name,
-      Delete: {
-        Objects: listResponse.Contents.map((item) => ({ Key: item.Key })),
-        Quiet: false,
-      },
-    };
+      // We need to first get all objects within the folder
+      const listParams = {
+        Bucket: bucket_name,
+        Prefix: folder_to_delete,
+      };
 
-    // Delete the objects
-    const deleteResponse = await client.send(
-      new DeleteObjectsCommand(deleteParams)
-    );
-    console.log(deleteResponse);
+      const listResponse = await client.send(
+        new ListObjectsV2Command(listParams)
+      );
 
-    // Now, let's modify the index.json file
-    // Download the index.json file
-    const getParams = {
-      Bucket: bucket_name,
-      Key: typeDirectory + "index.json", // Change here
-    };
+      // Prepare objects for deletion
+      const deleteParams = {
+        Bucket: bucket_name,
+        Delete: {
+          Objects: listResponse.Contents.map((item) => ({ Key: item.Key })),
+          Quiet: false,
+        },
+      };
 
-    const getObjectResponse = await client.send(
-      new GetObjectCommand(getParams)
-    );
-    const bodyContents = await streamToString(getObjectResponse.Body);
-    const index = JSON.parse(bodyContents);
+      // Delete the objects
+      const deleteResponse = await client.send(
+        new DeleteObjectsCommand(deleteParams)
+      );
+      console.log(deleteResponse);
 
-    // Remove the key from the index object
-    delete index[folder_to_delete.split("/")[1]];
+      // Now, let's modify the index.json file
+      // Download the index.json file
+      const getParams = {
+        Bucket: bucket_name,
+        Key: typeDirectory + "index.json", // Change here
+      };
 
-    // Upload the index.json file
-    const putParams = {
-      Bucket: bucket_name,
-      Key: typeDirectory + "index.json", // Change here
-      Body: JSON.stringify(index),
-    };
+      const getObjectResponse = await client.send(
+        new GetObjectCommand(getParams)
+      );
+      const bodyContents = await streamToString(getObjectResponse.Body);
+      const index = JSON.parse(bodyContents);
 
-    const putObjectResponse = await client.send(
-      new PutObjectCommand(putParams)
-    );
-    console.log(putObjectResponse);
+      // Remove the key from the index object
+      delete index[folder_to_delete.split("/")[1]];
+
+      // Upload the index.json file
+      const putParams = {
+        Bucket: bucket_name,
+        Key: typeDirectory + "index.json", // Change here
+        Body: JSON.stringify(index),
+        ACL: "public-read", // to make file public
+      };
+
+      const putObjectResponse = await client.send(
+        new PutObjectCommand(putParams)
+      );
+      console.log(putObjectResponse);
+    }
 
     res.status(200).send({
       message: "Folder and index modification completed",
