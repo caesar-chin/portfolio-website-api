@@ -25,13 +25,11 @@ const client = new S3Client({
 exports.delete_occasions = async (req, res) => {
   const bucket_name = process.env.AWS_BUCKET;
   const folders_to_delete = req.body.occasion || [];
-
+  console.log(req.body);
   try {
     for (const folder_to_delete of folders_to_delete) {
-      // Extracting the root directory (like "concert/" or "landscape/")
       const typeDirectory = folder_to_delete.split("/")[0] + "/";
 
-      // We need to first get all objects within the folder
       const listParams = {
         Bucket: bucket_name,
         Prefix: folder_to_delete,
@@ -41,23 +39,22 @@ exports.delete_occasions = async (req, res) => {
         new ListObjectsV2Command(listParams)
       );
 
-      // Prepare objects for deletion
-      const deleteParams = {
-        Bucket: bucket_name,
-        Delete: {
-          Objects: listResponse.Contents.map((item) => ({ Key: item.Key })),
-          Quiet: false,
-        },
-      };
+      // Check if there are contents in the listResponse before preparing for deletion
+      if (listResponse.Contents && listResponse.Contents.length > 0) {
+        const deleteParams = {
+          Bucket: bucket_name,
+          Delete: {
+            Objects: listResponse.Contents.map((item) => ({ Key: item.Key })),
+            Quiet: false,
+          },
+        };
 
-      // Delete the objects
-      const deleteResponse = await client.send(
-        new DeleteObjectsCommand(deleteParams)
-      );
-      console.log(deleteResponse);
+        const deleteResponse = await client.send(
+          new DeleteObjectsCommand(deleteParams)
+        );
+        console.log(deleteResponse);
+      }
 
-      // Now, let's modify the index.json file
-      // Download the index.json file
       const getParams = {
         Bucket: bucket_name,
         Key: typeDirectory + "index.json", // Change here
@@ -69,10 +66,8 @@ exports.delete_occasions = async (req, res) => {
       const bodyContents = await streamToString(getObjectResponse.Body);
       const index = JSON.parse(bodyContents);
 
-      // Remove the key from the index object
       delete index[folder_to_delete.split("/")[1]];
 
-      // Upload the index.json file
       const putParams = {
         Bucket: bucket_name,
         Key: typeDirectory + "index.json", // Change here

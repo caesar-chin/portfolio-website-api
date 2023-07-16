@@ -53,25 +53,25 @@ module.exports = (app, passport) => {
 
   router.delete(
     "/delete_files",
-    // ensureAuthenticated,
+    ensureAuthenticated,
     delete_pictures.delete_files
   );
 
   router.delete(
     "/delete_occasions",
-    // ensureAuthenticated,
+    ensureAuthenticated,
     delete_occasions.delete_occasions
   );
 
   router.put(
     "/edit_details",
-    // ensureAuthenticated,
+    ensureAuthenticated,
     edit_details.edit_details
   );
 
   router.put(
     "/edit_ocacsion_name",
-    // ensureAuthenticated,
+    ensureAuthenticated,
     edit_ocacsion_name.edit_occasion_name
   );
 
