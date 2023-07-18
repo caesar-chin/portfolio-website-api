@@ -94,7 +94,7 @@ exports.add_key_json = async (
       let buffer = data.Body;
       let json = JSON.parse(await streamToString(buffer));
 
-      new_obj = metadata.map((photoData) => {
+      new_obj = metadata.map((photoData, index) => {
         const fileName = Object.keys(photoData)[0]; // get the file name
         const photo = successfulOriginalUploads.find(
           (photo) => photo.fileName === fileName
@@ -106,6 +106,7 @@ exports.add_key_json = async (
               occasion: occasion,
               type: type,
               url: photo.url,
+              webp_url: successfulWebpUploads[index]?.url,
             },
           };
         }

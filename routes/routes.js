@@ -70,7 +70,7 @@ module.exports = (app, passport) => {
   );
 
   router.put(
-    "/edit_ocacsion_name",
+    "/edit_occasion_name",
     ensureAuthenticated,
     edit_ocacsion_name.edit_occasion_name
   );
