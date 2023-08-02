@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const {
   S3Client,
   DeleteObjectsCommand,

@@ -1,3 +1,6 @@
+require("dotenv").config();
+
+
 exports.auth_github = (passport) => {
   return (req, res, next) => {
     passport.authenticate("github")(req, res, next);

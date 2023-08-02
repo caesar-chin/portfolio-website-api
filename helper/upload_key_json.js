@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const {
   ListObjectsV2Command,
   GetObjectCommand,
