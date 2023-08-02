@@ -46,6 +46,7 @@ async function fetchJsonFile(key) {
 
 exports.getIndexAndKeyJson = async (req, res) => {
   try {
+    console.log(process.env.AWS_BUCKET);
     let output_json_file = {
       concert: { index: {}, keys: {} },
       streetlandscape: { index: {}, keys: {} },
@@ -76,9 +77,13 @@ exports.getIndexAndKeyJson = async (req, res) => {
       }
     }
     // console.log(concert_keys);
-    res.status(200).send({ message: "success", data: output_json_file, success: true });
+    res
+      .status(200)
+      .send({ message: "success", data: output_json_file, success: true });
   } catch (error) {
     console.log(error);
-    res.status(400).send({ message: "There has been an error", success: false });
+    res
+      .status(400)
+      .send({ message: "There has been an error", success: false });
   }
 };
