@@ -46,7 +46,7 @@ async function fetchJsonFile(key) {
 
 exports.getIndexAndKeyJson = async (req, res) => {
   try {
-    console.log(process.env.AWS_BUCKET);
+    console.log("Bucket Name: " + process.env.AWS_BUCKET);
     let output_json_file = {
       concert: { index: {}, keys: {} },
       streetlandscape: { index: {}, keys: {} },
