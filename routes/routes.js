@@ -63,11 +63,7 @@ module.exports = (app, passport) => {
     delete_occasions.delete_occasions
   );
 
-  router.put(
-    "/edit_details",
-    ensureAuthenticated,
-    edit_details.edit_details
-  );
+  router.put("/edit_details", ensureAuthenticated, edit_details.edit_details);
 
   router.put(
     "/edit_occasion_name",
