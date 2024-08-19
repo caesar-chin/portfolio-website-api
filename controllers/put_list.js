@@ -87,6 +87,7 @@ async function checkIfExists(key) {
 exports.add_new_occasion = async (req, res) => {
   const type = req.body.type;
   const occasion = req.body.occasion;
+  console.log(req.body.occasion)
   var occasion_key = modify_string(req.body.occasion);
 
   // Check if occasion already exists
@@ -129,7 +130,6 @@ exports.add_new_occasion = async (req, res) => {
   // console.log(occasion_key);
   jsonfile[`${occasion_key}`] = req.body.occasion;
 
-  // Upload updated json file to S3 bucket and adds empty folder in s3 using occasion_key
   // Upload updated json file to S3 bucket and adds empty folder in s3 using occasion_key
   const uploadParams = {
     Bucket: process.env.AWS_BUCKET,
@@ -177,6 +177,32 @@ exports.add_new_occasion = async (req, res) => {
     });
 
   console.log("New occasion added");
+
+    // **Upload empty keys.json file to the newly created occasion folder**
+    const keysJsonPath = `${key}keys.json`;
+    const uploadParams3 = {
+      Bucket: process.env.AWS_BUCKET,
+      Key: keysJsonPath,
+      Body: JSON.stringify({}), // Empty JSON object
+      ContentType: "application/json",
+      ACL: "public-read",
+    };
+  
+    const upload3 = new Upload({
+      client: client,
+      params: uploadParams3,
+    });
+  
+    await upload3
+      .done()
+      .then((result) => {
+        return result.Location;
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  
+    console.log("New occasion and keys.json added");
 
   res.status(200).send({
     success: true,

@@ -9,6 +9,8 @@ const {
   ListObjectsV2Command,
 } = require("@aws-sdk/client-s3");
 
+const {modify_string} = require("../helper/modify_string.js");
+
 const streamToString = (stream) =>
   new Promise((resolve, reject) => {
     const chunks = [];
@@ -31,7 +33,11 @@ exports.edit_occasion_name = async (req, res) => {
   const newPath = req.body.new_path;
   const newOccasionName = req.body.new_occasion_name;
 
+  console.log(modify_string(newOccasionName));
+
   const folderType = oldPath.split("/")[0];
+
+  console.log("Hello: " + newPath)
 
   // Download the index.json file
   const getParams = {
@@ -46,15 +52,25 @@ exports.edit_occasion_name = async (req, res) => {
   // Convert to array of key-value pairs
   const entries = Object.entries(index);
 
+  console.log(entries);
+
+
   // Find index of oldOccasion key-value pair
   const oldIndex = entries.findIndex(([key]) => key === oldPath.split("/")[1]);
+
+  console.log(oldIndex);
+
 
   if (oldIndex !== -1 && !index[newPath.split("/")[1]]) {
     // Remove oldOccasion key-value pair
     entries.splice(oldIndex, 1);
 
     // Insert newOccasion key-value pair at old index
-    entries.splice(oldIndex, 0, [newPath.split("/")[1], newOccasionName]);
+    entries.splice(oldIndex, 0, [modify_string(newPath.split("/")[1]), newOccasionName]);
+
+    console.log(newPath.split("/"));
+
+    console.log(entries)
 
     // Convert back to object
     const newIndex = Object.fromEntries(entries);
@@ -85,7 +101,7 @@ exports.edit_occasion_name = async (req, res) => {
     const keys = JSON.parse(keysBodyContents);
 
     // Modify the url and webp_url fields
-    for (let obj of keys) {
+    for (let obj of [].concat(keys || [])) {
       for (let key in obj) {
         obj[key].url = obj[key].url.replace(oldPath, newPath);
         obj[key].webp_url = obj[key].webp_url.replace(oldPath, newPath);
@@ -140,6 +156,7 @@ async function renameFolder(bucket, oldFolderPath, newFolderPath) {
         Bucket: bucket,
         CopySource: `${bucket}/${item.Key}`,
         Key: item.Key.replace(oldFolderPath, newFolderPath),
+        ACL: "public-read",
       };
 
       copyPromises.push(client.send(new CopyObjectCommand(copyParams)));
