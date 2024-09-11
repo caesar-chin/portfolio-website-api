@@ -183,7 +183,7 @@ exports.add_new_occasion = async (req, res) => {
     const uploadParams3 = {
       Bucket: process.env.AWS_BUCKET,
       Key: keysJsonPath,
-      Body: JSON.stringify({}), // Empty JSON object
+      Body: JSON.stringify([{}]), // Empty JSON object
       ContentType: "application/json",
       ACL: "public-read",
     };
