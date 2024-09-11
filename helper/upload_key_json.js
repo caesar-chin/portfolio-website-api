@@ -117,6 +117,8 @@ exports.add_key_json = async (
 
       json = [...json, ...new_obj];
 
+      json = json.filter((obj) => Object.keys(obj).length !== 0);
+
       const newBuffer = Buffer.from(JSON.stringify(json));
 
       await uploadToS3(client, newBuffer, key);
